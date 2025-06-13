@@ -1,6 +1,6 @@
 # Project files
 results/
-# data/
+data/
 data/FDDB
 data/widerface
 eval/
@@ -8,6 +8,7 @@ weights/*.pth
 weights/*.pt
 weights/*.ckpt
 *.onnx
+slurm*
 
 widerface_evaluation
 

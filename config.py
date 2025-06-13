@@ -52,7 +52,7 @@ cfg_mnet = {
     'clip': False,
     'loc_weight': 2.0,
     'batch_size': 32,
-    'epochs': 250,
+    'epochs': 150,
     'milestones': [190, 220],
     'image_size': 640,
     'pretrain': False,

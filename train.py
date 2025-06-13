@@ -13,6 +13,7 @@ from layers import PriorBox, MultiBoxLoss
 from utils.dataset import WiderFaceDetection
 from utils.transform import Augmentation
 
+from tqdm import tqdm
 
 def parse_args():
     import argparse
@@ -174,8 +175,15 @@ def main(params):
         except Exception as e:
             print(f"Exception occurred while loading checkpoint, exception message: {e}")
 
+    tic = time.time()
+    
+    epoch_training_time=[0]
+    total_time_elapsed=[0]
+
     print("Training started!")
     for epoch in range(start_epoch, cfg['epochs']):
+        print(epoch)
+
         train_one_epoch(
             model,
             criterion,
@@ -196,8 +204,21 @@ def main(params):
 
         lr_scheduler.step()
 
+        time_delta = int(time.time() - tic)
+
+        print(time_delta)
+    
+        total_time_elapsed.append(time_delta)
+
+        print("previous running time : " + str(epoch_training_time[epoch]))
+
+        epoch_training_time.append(time_delta - total_time_elapsed[epoch])
+
         torch.save(ckpt, f'{params.save_dir}/{params.network}_checkpoint.ckpt')
         torch.save(model.state_dict(), f'{params.save_dir}/{params.network}_last.pth')
+
+    print(epoch_training_time)
+    print(total_time_elapsed)
 
     # save final model
     state = model.state_dict()
