@@ -13,8 +13,6 @@ from layers import PriorBox, MultiBoxLoss
 from utils.dataset import WiderFaceDetection
 from utils.transform import Augmentation
 
-from tqdm import tqdm
-
 def parse_args():
     import argparse
 
@@ -182,8 +180,6 @@ def main(params):
 
     print("Training started!")
     for epoch in range(start_epoch, cfg['epochs']):
-        print(epoch)
-
         train_one_epoch(
             model,
             criterion,
@@ -205,14 +201,12 @@ def main(params):
         lr_scheduler.step()
 
         time_delta = int(time.time() - tic)
-
-        print(time_delta)
-    
         total_time_elapsed.append(time_delta)
 
-        print("previous running time : " + str(epoch_training_time[epoch]))
+        curr_train_time = time_delta - total_time_elapsed[epoch]
+        print("this epoch's running time : " + str(curr_train_time))
 
-        epoch_training_time.append(time_delta - total_time_elapsed[epoch])
+        epoch_training_time.append(curr_train_time)
 
         torch.save(ckpt, f'{params.save_dir}/{params.network}_checkpoint.ckpt')
         torch.save(model.state_dict(), f'{params.save_dir}/{params.network}_last.pth')
