@@ -218,3 +218,46 @@ class IntermediateLayerGetterByIndex(nn.Module):
                 outputs[out_name] = x
 
         return outputs
+
+class IntermediateLayerGetterNested(nn.Module):
+    def __init__(self, model, return_layers):
+        """
+        Args:
+            model (nn.Module): the original model
+            return_layers (dict): a dict mapping from dotted layer path to user-defined names, 
+                                  e.g. {"stage0.conv01": "out1"}
+        """
+        super().__init__()
+        self.model = model
+        self.return_layers = return_layers
+        self.layer_paths = list(return_layers.keys())
+
+    def _get_from_path(self, model, path):
+        for part in path.split('.'):
+            model = getattr(model, part)
+        return model
+
+    def forward(self, x):
+        outputs = OrderedDict()
+        modules = {'' : self.model}
+        activations = {'' : x}
+
+        # Run forward manually to capture nested layers
+        def hook_fn(name):
+            def hook(module, input, output):
+                outputs[self.return_layers[name]] = output
+            return hook
+
+        hooks = []
+        for layer_path, alias in self.return_layers.items():
+            module = self._get_from_path(self.model, layer_path)
+            hooks.append(module.register_forward_hook(hook_fn(layer_path)))
+
+        _ = self.model(x)  # Run full forward once
+
+        # Remove all hooks
+        for h in hooks:
+            h.remove()
+
+        return outputs
+  

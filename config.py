@@ -6,7 +6,10 @@ def get_config(network):
         "mobilenetv2": cfg_mnet_v2,
         "resnet50": cfg_re50,
         "resnet34": cfg_re34,
-        "resnet18": cfg_re18
+        "resnet18": cfg_re18,
+        "convnext_tiny": cnx_t,
+        "convnext_small": cnx_s,
+        "resnext50": cfg_rex50
     }
     return configs.get(network, None)
 
@@ -108,7 +111,8 @@ cfg_re34 = {
     'pretrain': True,
     'return_layers': {'layer2': 1, 'layer3': 2, 'layer4': 3},
     'in_channel': 64,
-    'out_channel': 128
+    'out_channel': 128,
+    'round': 'ceil'
 }
 
 cfg_re50 = {
@@ -125,5 +129,58 @@ cfg_re50 = {
     'pretrain': True,
     'return_layers': {'layer2': 1, 'layer3': 2, 'layer4': 3},
     'in_channel': 256,
-    'out_channel': 256
+    'out_channel': 256,
+    'round': 'ceil'
+}
+
+cnx_t = {
+    'name': 'convnext_tiny',
+    'min_sizes': [[16, 32], [64, 128], [256, 512]],
+    'steps': [8, 16, 32],
+    'variance': [0.1, 0.2],
+    'clip': False,
+    'loc_weight': 2.0,
+    'batch_size': 32,
+    'epochs': 100,
+    'milestones': [70, 90],
+    'image_size': 640,
+    'pretrain': True,
+    'return_layers': {'features.3': 1, 'features.5': 2, 'features.7': 3},
+    'in_channel': 96,
+    'out_channel': 192,
+    'round': 'floor'
+}
+
+cnx_s = {
+    'name': 'convnext_small',
+    'min_sizes': [[16, 32], [64, 128], [256, 512]],
+    'steps': [8, 16, 32],
+    'variance': [0.1, 0.2],
+    'clip': False,
+    'loc_weight': 2.0,
+    'batch_size': 32,
+    'epochs': 100,
+    'milestones': [70, 90],
+    'image_size': 640,
+    'pretrain': True,
+    'return_layers': {'features.3': 1, 'features.5': 2, 'features.7': 3},
+    'in_channel': 96,
+    'out_channel': 192
+}
+
+cfg_rex50 = {
+    'name': 'resnext50',
+    'min_sizes': [[16, 32], [64, 128], [256, 512]],
+    'steps': [8, 16, 32],
+    'variance': [0.1, 0.2],
+    'clip': False,
+    'loc_weight': 2.0,
+    'batch_size': 8,
+    'epochs': 100,
+    'milestones': [70, 90],
+    'image_size': 640,
+    'pretrain': True,
+    'return_layers': {'layer2': 1, 'layer3': 2, 'layer4': 3},
+    'in_channel': 256,
+    'out_channel': 512
 }

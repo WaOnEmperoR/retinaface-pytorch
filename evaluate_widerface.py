@@ -29,7 +29,7 @@ def parse_arguments():
         default='mobilenetv1',
         choices=[
             'mobilenetv1', 'mobilenetv1_0.25', 'mobilenetv1_0.50',
-            'mobilenetv2', 'resnet50', 'resnet34', 'resnet18'
+            'mobilenetv2', 'resnet50', 'resnet34', 'resnet18', 'convnext_tiny', 'resnext50'
         ],
         help='Backbone network architecture'
     )
@@ -149,10 +149,16 @@ def main(params):
         loc, conf, landmarks = inference(model, image)  # forward pass
         forward_pass = time.time() - st
 
+        # print(image_path)
+        # print(loc.shape)
+        # print(img_height, img_width)
+        
         # generate anchor boxes
         priorbox = PriorBox(cfg, image_size=(img_height, img_width))
         priors = priorbox.generate_anchors().to(device)
 
+        # print(priors.shape)
+        
         # decode boxes and landmarks
         boxes = decode(loc, priors, cfg['variance'])
         landmarks = decode_landmarks(landmarks, priors, cfg['variance'])

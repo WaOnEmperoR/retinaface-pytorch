@@ -5,6 +5,9 @@ from torch import nn, Tensor
 import torch.nn.functional as F
 import torchvision.models._utils as _utils
 
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
+
 from models.backbones import (
     mobilenet_v1_025,
     mobilenet_v1_050,
@@ -14,8 +17,9 @@ from models.backbones import (
     resnet34,
     resnet50
 )
-from torchvision import models
-from models.common import SSH, FPN, IntermediateLayerGetterByIndex
+# from torchvision import models
+import torchvision.models as tvmodels
+from models.common import SSH, FPN, IntermediateLayerGetterByIndex, IntermediateLayerGetterNested
 
 
 def get_layer_extractor(cfg, backbone):
@@ -31,6 +35,8 @@ def get_layer_extractor(cfg, backbone):
     """
     if cfg['name'] == "mobilenet_v2":
         return IntermediateLayerGetterByIndex(backbone, [6, 13, 18])
+    elif cfg['name'] == "convnext_tiny" or cfg['name'] == "convnext_small":
+        return IntermediateLayerGetterNested(backbone, cfg['return_layers'])
     else:
         return _utils.IntermediateLayerGetter(backbone, cfg['return_layers'])
 
@@ -46,6 +52,15 @@ def build_backbone(name, pretrained=False):
     Returns:
         nn.Module: The chosen backbone network.
     """
+    if (name=='convnext_tiny'):
+        return tvmodels.convnext_tiny(tvmodels.ConvNeXt_Tiny_Weights.IMAGENET1K_V1)
+    
+    if (name=='convnext_small'):
+        return tvmodels.convnext_small(tvmodels.ConvNeXt_Small_Weights.IMAGENET1K_V1)
+    
+    if (name=='resnext50'):
+        return tvmodels.resnext50_32x4d(weights=tvmodels.ResNeXt50_32X4D_Weights.DEFAULT)
+         
     backbone_map = {
         'mobilenet0.25': lambda: mobilenet_v1_025(pretrained=pretrained),
         'mobilenet0.50': mobilenet_v1_050,
@@ -53,7 +68,7 @@ def build_backbone(name, pretrained=False):
         'mobilenet_v2': lambda: mobilenet_v2(pretrained=pretrained),
         'resnet50': lambda: resnet50(pretrained=pretrained),
         'resnet34': lambda: resnet34(pretrained=pretrained),
-        'resnet18': lambda: resnet18(pretrained=pretrained)
+        'resnet18': lambda: resnet18(pretrained=pretrained),
     }
 
     if name not in backbone_map:
@@ -167,13 +182,22 @@ class RetinaFace(nn.Module):
 
     def forward(self, x: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
         out = self.fx(x)
+        
+        # print(out[2].shape)
+        # print(out[3].shape)
+        
+        # call this only when using convnext families backbone
+        # out[3] = F.pad(out[3], pad=(0, 0, 0, 1))
+        
+        # print("debug FPN shape: ", [out[1].shape, out[2].shape, out[3].shape])
+        
         fpn = self.fpn(out)
 
         # single-stage headless module
         feature1 = self.ssh1(fpn[0])
         feature2 = self.ssh2(fpn[1])
         feature3 = self.ssh3(fpn[2])
-
+        
         features = [feature1, feature2, feature3]
 
         classifications = self.class_head(features)
