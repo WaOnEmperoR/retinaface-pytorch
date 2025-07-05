@@ -85,11 +85,11 @@ def print_layer_info(model, input_size=(3, 224, 224)):
 
 if __name__ == "__main__":
   # Method 1: Load ConvNeXt-Tiny model
-  print("Loading CN Small model...")
-#   model = tvmodels.convnext_tiny(weights=tvmodels.ConvNeXt_Tiny_Weights.IMAGENET1K_V1)  # or weights=models.ConvNeXt_Tiny_Weights.DEFAULT for newer versions
+#   print("Loading CN model...")
+  model = tvmodels.convnext_tiny(weights=tvmodels.ConvNeXt_Tiny_Weights.IMAGENET1K_V1)  # or weights=models.ConvNeXt_Tiny_Weights.DEFAULT for newer versions
 #   model = tvmodels.convnext_small(weights=tvmodels.ConvNeXt_Small_Weights.IMAGENET1K_V1)  # or weights=models.ConvNeXt_Tiny_Weights.DEFAULT for newer versions
-  model = tvmodels.resnext50_32x4d(weights=tvmodels.ResNeXt50_32X4D_Weights.DEFAULT)    
-#   model = resnet50(pretrained=True)
+#   model = tvmodels.resnext50_32x4d(weights=tvmodels.ResNeXt50_32X4D_Weights.DEFAULT)    
+#   model = resnet34(pretrained=True)
 
   # Print basic model information
   print(f"Model type: {type(model).__name__}")
@@ -115,18 +115,18 @@ if __name__ == "__main__":
 
   print("="*50)
   # yy = _utils.IntermediateLayerGetter(model, {'features': 1, 'features.5': 2, 'features.7': 3})
-  getter = _utils.IntermediateLayerGetter(model, {'layer2': 1, 'layer3': 2, 'layer4': 3})
+#   getter = _utils.IntermediateLayerGetter(model, {'layer2': 1, 'layer3': 2, 'layer4': 3})
   # yy = IntermediateLayerGetterByIndex(model, {})
   # out = yy(torch.rand(1, 3, 224, 224)) 
 
-#   getter = IntermediateLayerGetterNested(
-#     model,
-#     return_layers={
-#         "features.3": 1,
-#         "features.5": 2,
-#         "features.7": 3
-#     }
-#   )
+  getter = IntermediateLayerGetterNested(
+    model,
+    return_layers={
+        "features.3": 1,
+        "features.5": 2,
+        "features.7": 3
+    }
+  )
 
   output = getter(torch.rand(1, 3, 800, 1200))
 
