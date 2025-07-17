@@ -9,5 +9,5 @@ source ../../pt_38_a100/bin/activate
 
 # Your script goes here
 date;
-python3 train.py --network resnet34
+python3 train.py --network resnet50
 date;
