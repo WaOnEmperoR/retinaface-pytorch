@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from utils.box_utils import match, log_sum_exp
+from utils.box_utils_mod import match, log_sum_exp
 
 
-class MultiBoxLoss(nn.Module):
+class MultiBoxLossMod(nn.Module):
     """
     SSD Weighted Loss Function
 
@@ -39,7 +39,7 @@ class MultiBoxLoss(nn.Module):
         threshold,
         neg_pos_ratio,
         variance=[0.1, 0.2],
-        device=torch.device("cpu"),
+        device=torch.device("cpu")
     ):
         super().__init__()
         self.priors = priors  # torch.size(num_priors, 4)
@@ -60,20 +60,18 @@ class MultiBoxLoss(nn.Module):
                 shape: [batch_size, num_objs, 5] (last index is the label).
         """
 
-        loc_preds, conf_preds, landmark_preds = predictions
+        loc_preds, conf_preds = predictions
         batch_size = loc_preds.size(0)
         num_classes = conf_preds.size(2)
         num_priors = self.priors.size(0)
 
         # match priors (default boxes) and ground truth boxes
         loc_targets = torch.Tensor(batch_size, num_priors, 4).to(self.device)
-        lnm_targets = torch.Tensor(batch_size, num_priors, 10).to(self.device)
         conf_targets = torch.LongTensor(batch_size, num_priors).to(self.device)
 
         for idx in range(batch_size):
             truths = ground_truth[idx][:, :4]
             labels = ground_truth[idx][:, -1]
-            landms = ground_truth[idx][:, 4:14]
             defaults = self.priors
             match(
                 self.threshold,
@@ -81,22 +79,10 @@ class MultiBoxLoss(nn.Module):
                 defaults,
                 self.variance,
                 labels,
-                landms,
                 loc_targets,
                 conf_targets,
-                lnm_targets,
-                idx,
+                idx
             )
-
-        # Landmark Loss (Smooth L1)
-        pos1_mask = conf_targets > 0
-        num_pos_landm = pos1_mask.long().sum(1, keepdim=True)
-        N1 = max(num_pos_landm.sum().float(), 1)
-        pos_idx1 = pos1_mask.unsqueeze(pos1_mask.dim()).expand_as(landmark_preds)
-
-        landm_p = landmark_preds[pos_idx1].view(-1, 10)
-        lnm_targets = lnm_targets[pos_idx1].view(-1, 10)
-        loss_landm = F.smooth_l1_loss(landm_p, lnm_targets, reduction='sum')
 
         pos_mask = conf_targets != 0
         conf_targets[pos_mask] = 1
@@ -132,7 +118,5 @@ class MultiBoxLoss(nn.Module):
         N = max(num_pos.sum().float(), 1)
         loc_loss /= N
         conf_loss /= N
-        loss_landm /= N1
-
-        return loc_loss, conf_loss, loss_landm
-
+        
+        return loc_loss, conf_loss

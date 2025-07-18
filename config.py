@@ -61,7 +61,8 @@ cfg_mnet = {
     'pretrain': False,
     'return_layers': {'stage1': 1, 'stage2': 2, 'stage3': 3},
     'in_channel': 128,
-    'out_channel': 128
+    'out_channel': 128,
+    'use_landmark' : True
 }
 
 cfg_mnet_v2 = {
@@ -112,7 +113,8 @@ cfg_re34 = {
     'return_layers': {'layer2': 1, 'layer3': 2, 'layer4': 3},
     'in_channel': 64,
     'out_channel': 128,
-    'round': 'ceil'
+    'round': 'ceil',
+    'use_landmark' : False
 }
 
 cfg_re50 = {
@@ -130,7 +132,8 @@ cfg_re50 = {
     'return_layers': {'layer2': 1, 'layer3': 2, 'layer4': 3},
     'in_channel': 256,
     'out_channel': 512,
-    'round': 'ceil'
+    'round': 'ceil',
+    'use_landmark' : False
 }
 
 cnx_t = {
@@ -148,7 +151,8 @@ cnx_t = {
     'return_layers': {'features.3': 1, 'features.5': 2, 'features.7': 3},
     'in_channel': 96,
     'out_channel': 192,
-    'round': 'floor'
+    'round': 'floor',
+    'use_landmark' : False
 }
 
 cnx_s = {
@@ -182,5 +186,6 @@ cfg_rex50 = {
     'pretrain': True,
     'return_layers': {'layer2': 1, 'layer3': 2, 'layer4': 3},
     'in_channel': 256,
-    'out_channel': 512
+    'out_channel': 512,
+    'use_landmark' : False
 }

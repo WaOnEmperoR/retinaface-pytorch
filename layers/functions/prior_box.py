@@ -16,13 +16,13 @@ class PriorBox:
         # self.round = cfg['round']
         
         # if self.round == 'ceil':
-        self.feature_maps = [[
-            math.ceil(self.image_size[0]/step), math.ceil(self.image_size[1]/step)] for step in self.steps
-        ]
-        # elif self.round == 'floor':
         # self.feature_maps = [[
-        #     math.floor(self.image_size[0]/step), math.floor(self.image_size[1]/step)] for step in self.steps
+        #     math.ceil(self.image_size[0]/step), math.ceil(self.image_size[1]/step)] for step in self.steps
         # ]
+        # elif self.round == 'floor':
+        self.feature_maps = [[
+            math.floor(self.image_size[0]/step), math.floor(self.image_size[1]/step)] for step in self.steps
+        ]
         # else:
         #     self.feature_maps = [[
         #         round(self.image_size[0]/step), round(self.image_size[1]/step)] for step in self.steps

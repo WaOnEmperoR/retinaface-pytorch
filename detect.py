@@ -95,8 +95,15 @@ def inference(model, image):
 
     return loc, conf, landmarks
 
+@torch.no_grad()
+def inference_no_landmark(model, image):
+    model.eval()
+    loc, conf = model(image)
 
+    loc = loc.squeeze(0)
+    conf = conf.squeeze(0)
 
+    return loc, conf
 
 def main(params):
     # load configuration and device setup
@@ -128,9 +135,12 @@ def main(params):
     image = torch.from_numpy(image).unsqueeze(0)  # 1CHW
     image = image.to(device)
 
-    # forward pass
-    loc, conf, landmarks = inference(model, image)
-
+    if (cfg['use_landmark']):
+        # forward pass
+        loc, conf, landmarks = inference(model, image)
+    else:
+        loc, conf = inference_no_landmark(model, image)
+        
     print("debug shape loc: ", loc.shape)
     
     # generate anchor boxes
@@ -141,44 +151,53 @@ def main(params):
 
     # decode boxes and landmarks
     boxes = decode(loc, priors, cfg['variance'])
-    landmarks = decode_landmarks(landmarks, priors, cfg['variance'])
+    if (cfg['use_landmark']):
+        landmarks = decode_landmarks(landmarks, priors, cfg['variance'])
 
     # scale adjustments
     bbox_scale = torch.tensor([img_width, img_height] * 2, device=device)
     boxes = (boxes * bbox_scale / resize_factor).cpu().numpy()
-
-    landmark_scale = torch.tensor([img_width, img_height] * 5, device=device)
-    landmarks = (landmarks * landmark_scale / resize_factor).cpu().numpy()
+    
+    if (cfg['use_landmark']):
+        landmark_scale = torch.tensor([img_width, img_height] * 5, device=device)
+        landmarks = (landmarks * landmark_scale / resize_factor).cpu().numpy()
 
     scores = conf.cpu().numpy()[:, 1]
 
     # filter by confidence threshold
     inds = scores > params.conf_threshold
     boxes = boxes[inds]
-    landmarks = landmarks[inds]
+    if (cfg['use_landmark']):
+        landmarks = landmarks[inds]
     scores = scores[inds]
 
     # sort by scores
     order = scores.argsort()[::-1][:params.pre_nms_topk]
-    boxes, landmarks, scores = boxes[order], landmarks[order], scores[order]
-
+    if (cfg['use_landmark']):
+        boxes, landmarks, scores = boxes[order], landmarks[order], scores[order]
+    else:
+        boxes, scores = boxes[order], scores[order]
+        
     # apply NMS
     detections = np.hstack((boxes, scores[:, np.newaxis])).astype(np.float32, copy=False)
     keep = nms(detections, params.nms_threshold)
 
     detections = detections[keep]
-    landmarks = landmarks[keep]
+    if (cfg['use_landmark']):
+        landmarks = landmarks[keep]
 
     # keep top-k detections and landmarks
     detections = detections[:params.post_nms_topk]
-    landmarks = landmarks[:params.post_nms_topk]
+    if (cfg['use_landmark']):
+        landmarks = landmarks[:params.post_nms_topk]
 
     # concatenate detections and landmarks
-    detections = np.concatenate((detections, landmarks), axis=1)
+    if (cfg['use_landmark']):
+        detections = np.concatenate((detections, landmarks), axis=1)
 
     # show image
     if params.save_image:
-        draw_detections(original_image, detections, params.vis_threshold)
+        draw_detections(original_image, detections, params.vis_threshold, cfg['use_landmark'])
         # save image
         im_name = os.path.splitext(os.path.basename(params.image_path))[0]
         save_name = f"{im_name}_{params.network}_out.jpg"

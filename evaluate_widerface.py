@@ -67,6 +67,13 @@ def parse_arguments():
         help='Path to the dataset folder'
     )
 
+    parser.add_argument(
+        '--use-landmark',
+        type=bool,
+        default=True,
+        help='Whether use facial landmark or not'
+    )
+
     return parser.parse_args()
 
 
@@ -81,6 +88,25 @@ def inference(model, image):
 
     return loc, conf, landmarks
 
+@torch.no_grad()
+def inference_no_landmark(model, image):
+    model.eval()
+    loc, conf = model(image)
+
+    loc = loc.squeeze(0)
+    conf = conf.squeeze(0)
+
+    return loc, conf
+
+@torch.no_grad()
+def inference_no_landmark(model, image):
+    model.eval()
+    loc, conf = model(image)
+
+    loc = loc.squeeze(0)
+    conf = conf.squeeze(0)
+
+    return loc, conf
 
 def resize_image(image, target_size=1600, max_size=2150):
     """Resize the image while maintaining the aspect ratio."""
@@ -146,7 +172,12 @@ def main(params):
 
         # forward pass
         st = time.time()
-        loc, conf, landmarks = inference(model, image)  # forward pass
+        # loc, conf, landmarks = inference(model, image)  # forward pass
+        if (cfg['use_landmark']):
+            # forward pass
+            loc, conf, landmarks = inference(model, image)
+        else:
+            loc, conf = inference_no_landmark(model, image)
         forward_pass = time.time() - st
 
         # print(image_path)
@@ -161,33 +192,40 @@ def main(params):
         
         # decode boxes and landmarks
         boxes = decode(loc, priors, cfg['variance'])
-        landmarks = decode_landmarks(landmarks, priors, cfg['variance'])
+        if (cfg['use_landmark']):
+            landmarks = decode_landmarks(landmarks, priors, cfg['variance'])
 
         # scale adjustments
         bbox_scale = torch.tensor([img_width, img_height] * 2, device=device)
         boxes = (boxes * bbox_scale / resize_factor).cpu().numpy()
-
-        landmark_scale = torch.tensor([img_width, img_height] * 5, device=device)
-        landmarks = (landmarks * landmark_scale / resize_factor).cpu().numpy()
+        
+        if (cfg['use_landmark']):
+            landmark_scale = torch.tensor([img_width, img_height] * 5, device=device)
+            landmarks = (landmarks * landmark_scale / resize_factor).cpu().numpy()
 
         scores = conf.cpu().numpy()[:, 1]
 
         # filter by confidence threshold
         inds = scores > params.conf_threshold
         boxes = boxes[inds]
-        landmarks = landmarks[inds]
+        if (cfg['use_landmark']):
+            landmarks = landmarks[inds]
         scores = scores[inds]
 
         # sort by scores
         order = scores.argsort()[::-1]
-        boxes, landmarks, scores = boxes[order], landmarks[order], scores[order]
-
+        if (cfg['use_landmark']):
+            boxes, landmarks, scores = boxes[order], landmarks[order], scores[order]
+        else:
+            boxes, scores = boxes[order], scores[order]
+        
         # apply NMS
         detections = np.hstack((boxes, scores[:, np.newaxis])).astype(np.float32, copy=False)
         keep = nms(detections, params.nms_threshold)
 
         detections = detections[keep]
-        landmarks = landmarks[keep]
+        if (cfg['use_landmark']):
+            landmarks = landmarks[keep]
 
         # Save results
         save_name = params.save_folder + img_name[:-4] + ".txt"

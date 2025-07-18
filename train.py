@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 
 from config import get_config
 from models import RetinaFace
-from layers import PriorBox, MultiBoxLoss
+from layers import PriorBox, MultiBoxLoss, MultiBoxLossMod
 
 from utils.dataset import WiderFaceDetection
 from utils.transform import Augmentation
@@ -81,6 +81,7 @@ def train_one_epoch(
     data_loader,
     epoch,
     device,
+    use_landmark,
     print_freq=10,
     scaler=None
 ) -> None:
@@ -93,8 +94,12 @@ def train_one_epoch(
 
         with torch.amp.autocast("cuda", enabled=scaler is not None):
             outputs = model(images)
-            loss_loc, loss_conf, loss_land = criterion(outputs, targets)
-            loss = cfg['loc_weight'] * loss_loc + loss_conf + loss_land
+            if use_landmark:
+                loss_loc, loss_conf, loss_land = criterion(outputs, targets)
+                loss = cfg['loc_weight'] * loss_loc + loss_conf + loss_land
+            else:
+                loss_loc, loss_conf = criterion(outputs, targets)
+                loss = cfg['loc_weight'] * loss_loc + loss_conf
 
         optimizer.zero_grad()
         if scaler is not None:
@@ -108,12 +113,19 @@ def train_one_epoch(
         # Print training status
         if (batch_idx + 1) % print_freq == 0:
             lr = optimizer.param_groups[0]["lr"]
-            print(
-                f"Epoch: {epoch + 1}/{cfg['epochs']} | Batch: {batch_idx + 1}/{len(data_loader)} | "
-                f"Loss Localization : {loss_loc.item():.4f} | Classification: {loss_conf.item():.4f} | "
-                f"Landmarks: {loss_land.item():.4f} | "
-                f"LR: {lr:.8f} | Time: {(time.time() - start_time):.4f} s"
-            )
+            if use_landmark:
+                print(
+                    f"Epoch: {epoch + 1}/{cfg['epochs']} | Batch: {batch_idx + 1}/{len(data_loader)} | "
+                    f"Loss Localization : {loss_loc.item():.4f} | Classification: {loss_conf.item():.4f} | "
+                    f"Landmarks: {loss_land.item():.4f} | "
+                    f"LR: {lr:.8f} | Time: {(time.time() - start_time):.4f} s"
+                )
+            else:
+                print(
+                    f"Epoch: {epoch + 1}/{cfg['epochs']} | Batch: {batch_idx + 1}/{len(data_loader)} | "
+                    f"Loss Localization : {loss_loc.item():.4f} | Classification: {loss_conf.item():.4f} | "
+                    f"LR: {lr:.8f} | Time: {(time.time() - start_time):.4f} s"
+                )
         batch_loss.append(loss.item())
     print(f"Average batch loss: {np.mean(batch_loss):.7f}")
 
@@ -144,7 +156,10 @@ def main(params):
     priors = priors.to(device)
 
     # Multi Box Loss
-    criterion = MultiBoxLoss(priors=priors, threshold=0.35, neg_pos_ratio=7, variance=cfg['variance'], device=device)
+    if (cfg['use_landmark']):
+        criterion = MultiBoxLoss(priors=priors, threshold=0.35, neg_pos_ratio=7, variance=cfg['variance'], device=device)
+    else:
+        criterion = MultiBoxLossMod(priors=priors, threshold=0.35, neg_pos_ratio=7, variance=cfg['variance'], device=device)
 
     # Initialize model
     model = RetinaFace(cfg=cfg)
@@ -188,6 +203,7 @@ def main(params):
             data_loader,
             epoch,
             device,
+            cfg['use_landmark'],
             params.print_freq,
             scaler=None
         )
@@ -209,15 +225,15 @@ def main(params):
 
         epoch_training_time.append(curr_train_time)
 
-        torch.save(ckpt, f'{params.save_dir}/{params.network}_checkpoint.ckpt')
-        torch.save(model.state_dict(), f'{params.save_dir}/{params.network}_last.pth')
+        torch.save(ckpt, f'{params.save_dir}/{params.network}_noLM_checkpoint.ckpt')
+        torch.save(model.state_dict(), f'{params.save_dir}/{params.network}_noLM_last.pth')
 
     print(epoch_training_time)
     print(total_time_elapsed)
 
     # save final model
     state = model.state_dict()
-    torch.save(state, f'{params.save_dir}/{params.network}_final.pth')
+    torch.save(state, f'{params.save_dir}/{params.network}_noLM_final.pth')
 
 
 if __name__ == '__main__':

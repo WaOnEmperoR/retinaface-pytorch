@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 
-def draw_detections(original_image, detections, vis_threshold):
+def draw_detections(original_image, detections, vis_threshold, draw_landmark):
     """
     Draws bounding boxes and landmarks on the image based on multiple detections.
 
@@ -31,17 +31,29 @@ def draw_detections(original_image, detections, vis_threshold):
     # Slice arrays efficiently
     boxes = detections[:, 0:4].astype(np.int32)
     scores = detections[:, 4]
-    landmarks = detections[:, 5:15].reshape(-1, 5, 2).astype(np.int32)
+    
+    if draw_landmark:
+        landmarks = detections[:, 5:15].reshape(-1, 5, 2).astype(np.int32)
 
-    for box, score, landmark in zip(boxes, scores, landmarks):
-        # Draw bounding box
-        cv2.rectangle(original_image, (box[0], box[1]), (box[2], box[3]), BOX_COLOR, 2)
+    if draw_landmark:
+        for box, score, landmark in zip(boxes, scores, landmarks):
+            # Draw bounding box
+            cv2.rectangle(original_image, (box[0], box[1]), (box[2], box[3]), BOX_COLOR, 2)
 
-        # Draw confidence score
-        text = f"{score:.2f}"
-        cx, cy = box[0], box[1] + 12
-        cv2.putText(original_image, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, TEXT_COLOR)
+            # Draw confidence score
+            text = f"{score:.2f}"
+            cx, cy = box[0], box[1] + 12
+            cv2.putText(original_image, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, TEXT_COLOR)
 
-        # Draw landmarks
-        for point, color in zip(landmark, LANDMARK_COLORS):
-            cv2.circle(original_image, point, 1, color, 4)
+            # Draw landmarks
+            for point, color in zip(landmark, LANDMARK_COLORS):
+                cv2.circle(original_image, point, 1, color, 4)
+    else:
+        for box, score in zip(boxes, scores):
+            # Draw bounding box
+            cv2.rectangle(original_image, (box[0], box[1]), (box[2], box[3]), BOX_COLOR, 2)
+
+            # Draw confidence score
+            text = f"{score:.2f}"
+            cx, cy = box[0], box[1] + 12
+            cv2.putText(original_image, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, TEXT_COLOR)

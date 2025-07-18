@@ -161,6 +161,8 @@ class RetinaFace(nn.Module):
         num_anchors = 2
         base_in_channels = cfg['in_channel']
         out_channels = cfg['out_channel']
+        
+        self.use_landmark = cfg['use_landmark']
 
         if cfg['name'] == "mobilenet_v2":
             fpn_in_channels = [32, 96, 1280]  # mobilenet v2
@@ -202,10 +204,18 @@ class RetinaFace(nn.Module):
 
         classifications = self.class_head(features)
         bbox_regressions = self.bbox_head(features)
-        landmark_regressions = self.landmark_head(features)
+        
+        if self.use_landmark:
+            landmark_regressions = self.landmark_head(features)
 
         if self.training:
-            output = (bbox_regressions, classifications, landmark_regressions)
+            if self.use_landmark:
+                output = (bbox_regressions, classifications, landmark_regressions)
+            else:
+                output = (bbox_regressions, classifications)
         else:
-            output = (bbox_regressions, F.softmax(classifications, dim=-1), landmark_regressions)
+            if self.use_landmark:
+                output = (bbox_regressions, F.softmax(classifications, dim=-1), landmark_regressions)
+            else:
+                output = (bbox_regressions, F.softmax(classifications, dim=-1))
         return output
