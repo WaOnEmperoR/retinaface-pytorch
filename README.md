@@ -268,16 +268,16 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## WaOnEmperoR's Edit
 
 ### 1. Support for Several New Backbone Encoder
-#### ResNet50
-#### ResNeXt50
-#### ConvNeXt-Tiny
+- ResNet50
+- ResNeXt50
+- ConvNeXt-Tiny
 Big thanks to ChatGPT for providing me a hook function to get the intermediate layers of ConvNeXt-Tiny model, which are not so easy to obtain with simple built-in functions. 
 
 ### 2. Support for Training and Testing Without Facial Landmarks
 
 When training dataset other than Widerface, we often get datasets that do not have facial landmarks. Therefore, I have modified the RetinaFace's training and testing module so that it can support this kind of dataset. The recipe is to make the landmark loss=0 during the training, so that only localization loss and classification loss remains. To achieve this one should modify the RetinaFace model so that it only returns bounding boxes and classifications without the landmarks, and other files which called this model must be adjusted in such a way that it produces a tensor of the right size.
 
-You only now need to add the parameter `use_landmark` with value `True` in your respective configurations in the config.py file.
+You only now need to add the parameter `use_landmark` with value `False` in your respective configurations in the config.py file to train and test RetinaFace without facial landmarks.
 
 TODO:
 - [ ] Create dummy ground truth annotation file for training and testing set which does not contains facial landmarks. Currently this training and testing technique just ignore the landmarks, but still reads it anyway.
