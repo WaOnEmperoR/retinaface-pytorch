@@ -271,6 +271,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 - ResNet50
 - ResNeXt50
 - ConvNeXt-Tiny
+
 Big thanks to ChatGPT for providing me a hook function to get the intermediate layers of ConvNeXt-Tiny model, which are not so easy to obtain with simple built-in functions. 
 
 ### 2. Support for Training and Testing Without Facial Landmarks
