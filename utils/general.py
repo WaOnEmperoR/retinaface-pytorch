@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-
+import json
 
 def draw_detections(original_image, detections, vis_threshold, draw_landmark):
     """
@@ -57,3 +57,56 @@ def draw_detections(original_image, detections, vis_threshold, draw_landmark):
             text = f"{score:.2f}"
             cx, cy = box[0], box[1] + 12
             cv2.putText(original_image, text, (cx, cy), cv2.FONT_HERSHEY_DUPLEX, 0.5, TEXT_COLOR)
+            
+def write_detections(im_name, original_image, detections, vis_threshold):
+    
+    image = np.float32(original_image)
+    img_height, img_width, _ = image.shape
+    
+    data_obj = {"image": im_name}
+    result = []
+    annotations = []
+    
+    # Filter by confidence
+    detections = detections[detections[:, 4] >= vis_threshold]
+
+    # Slice arrays efficiently
+    boxes = detections[:, 0:4].astype(np.int32)
+    scores = detections[:, 4]
+    
+    for box, score in zip(boxes, scores):
+        x = (box[0] / img_width) * 100
+        y = (box[1] / img_height) * 100
+        width = ((box[2] - box[0]) / img_width) * 100
+        height = ((box[3] - box[1]) / img_height) * 100
+
+        value_obj = {
+            "x" : round(float(x), 6),
+            "y" : round(float(y), 6),
+            "width" : round(float(width), 6),
+            "height" : round(float(height), 6),
+            "rotation": 0,
+            "rectanglelabels": ["Other"]
+        }
+        
+        result_obj = {
+            "original_width": img_width,
+            "original_height": img_height,
+            "image_rotation": 0,
+            "value": value_obj,
+            "from_name": "label",
+            "to_name": "image",
+            "type": "rectanglelabels",
+            "origin": "manual"
+        }
+        
+        result.append(result_obj)
+    
+    annotations.append({"result" : result})
+    
+    res = [{
+        "data": data_obj,
+        "annotations": annotations
+    }]
+    
+    return json.dumps(res, indent=2)

@@ -9,7 +9,7 @@ import torch
 from layers import PriorBox
 from config import get_config
 from models import RetinaFace
-from utils.general import draw_detections
+from utils.general import draw_detections, write_detections
 from utils.box_utils import decode, decode_landmarks, nms
 
 
@@ -65,6 +65,11 @@ def parse_arguments():
         '-s', '--save-image',
         action='store_true',
         help='Save the detection results as images'
+    )
+    parser.add_argument(
+        '-wa', '--write-annotation',
+        action='store_true',
+        help='Write annotation to JSON file'
     )
     parser.add_argument(
         '-v', '--vis-threshold',
@@ -203,7 +208,16 @@ def main(params):
         save_name = f"{im_name}_{params.network}_out.jpg"
         cv2.imwrite(save_name, original_image)
         print(f"Image saved at '{save_name}'")
+    
+    if params.write_annotation:
+        json_res = write_detections(im_name, original_image, detections, params.vis_threshold)
+        
+        save_name = f"{im_name}_{params.network}_annotation.json"
+        
+        with open(save_name, "w") as f:
+            f.write(json_res)
 
+        print(f"Annotation saved at '{save_name}'")
 
 if __name__ == '__main__':
     args = parse_arguments()

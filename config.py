@@ -133,7 +133,7 @@ cfg_re50 = {
     'in_channel': 256,
     'out_channel': 512,
     'round': 'ceil',
-    'use_landmark' : False
+    'use_landmark' : True
 }
 
 cnx_t = {

@@ -225,15 +225,15 @@ def main(params):
 
         epoch_training_time.append(curr_train_time)
 
-        torch.save(ckpt, f'{params.save_dir}/{params.network}_noLM_checkpoint.ckpt')
-        torch.save(model.state_dict(), f'{params.save_dir}/{params.network}_noLM_last.pth')
+        torch.save(ckpt, f'{params.save_dir}/{params.network}_noLM_sukarno_checkpoint.ckpt')
+        torch.save(model.state_dict(), f'{params.save_dir}/{params.network}_noLM_sukarno_last.pth')
 
     print(epoch_training_time)
     print(total_time_elapsed)
 
     # save final model
     state = model.state_dict()
-    torch.save(state, f'{params.save_dir}/{params.network}_noLM_final.pth')
+    torch.save(state, f'{params.save_dir}/{params.network}_noLM_sukarno_final.pth')
 
 
 if __name__ == '__main__':
