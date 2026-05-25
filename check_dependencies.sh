@@ -1,14 +1,15 @@
 #!/bin/bash
 
 #SBATCH --job-name=checkDep
-#SBATCH --nodelist=a100
+#SBATCH --nodelist=a1
 #SBATCH --partition=short
-#SBATCH --gres=gpu:a100:1
-#SBATCH --mem=32G
+#SBATCH --gres=gpu:v100:1
+#SBATCH --mem=24G
 #SBATCH --output=checkDep_slurm-%j.out
 
-# source ../../venv36b/bin/activate
-source ../../pt_38_a100/bin/activate
+source ../../venv36b/bin/activate
+# source ../../pt_38_a100/bin/activate
+# source ../../waone_310/bin/activate
 
 # Your script goes here
 date;
